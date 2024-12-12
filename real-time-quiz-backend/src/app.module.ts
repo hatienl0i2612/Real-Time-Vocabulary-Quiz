@@ -4,14 +4,17 @@ import { AppService } from './app.service';
 import { QuizModule } from './quiz/quiz.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { RedisModule } from '@nestjs-modules/ioredis';
+import { ConfigModule } from '@nestjs/config';
+import configuration from './config/configuration';
 
 @Module({
     imports: [
-        MongooseModule.forRoot(
-            'mongodb://admin:password@localhost:27018/admin',
-        ),
+        ConfigModule.forRoot({
+            load: [configuration],
+        }),
+        MongooseModule.forRoot(configuration().DB_URI),
         RedisModule.forRoot({
-            url: 'redis://127.0.0.1:6379',
+            url: configuration().REDIS_URI,
             type: 'single',
         }),
 

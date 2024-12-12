@@ -43,10 +43,6 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
         client.join(data.quizId);
 
         // Map the client ID to the user and quiz for tracking
-        // this.clientToUserMap.set(client.id, {
-        //     quizId: data.quizId,
-        //     userId: data.userId,
-        // });
         await this.quizService.addClient(client.id, data.quizId, data.userId);
 
         this.server
@@ -78,7 +74,6 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 .emit(SocketEvent.UPDATE_PARTICIPANTS, participants);
 
             // Remove the client from the map
-            // this.clientToUserMap.delete(client.id);
             await this.quizService.removeClient(client.id);
         }
     };
