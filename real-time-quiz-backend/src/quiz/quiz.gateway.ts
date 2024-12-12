@@ -15,10 +15,6 @@ import { QuizService } from './quiz.service';
 export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
     server: Server;
-    private clientToUserMap = new Map<
-        string,
-        { quizId: string; userId: string }
-    >();
 
     constructor(private readonly quizService: QuizService) {}
 
@@ -47,10 +43,11 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
         client.join(data.quizId);
 
         // Map the client ID to the user and quiz for tracking
-        this.clientToUserMap.set(client.id, {
-            quizId: data.quizId,
-            userId: data.userId,
-        });
+        // this.clientToUserMap.set(client.id, {
+        //     quizId: data.quizId,
+        //     userId: data.userId,
+        // });
+        await this.quizService.addClient(client.id, data.quizId, data.userId);
 
         this.server
             .to(data.quizId)
@@ -64,7 +61,7 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     private outQuiz = async (client: Socket) => {
         console.log('Client disconnected:', client.id);
-        const userData = this.clientToUserMap.get(client.id);
+        const userData = await this.quizService.getClient(client.id);
 
         if (userData) {
             const { quizId, userId } = userData;
@@ -81,7 +78,8 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 .emit(SocketEvent.UPDATE_PARTICIPANTS, participants);
 
             // Remove the client from the map
-            this.clientToUserMap.delete(client.id);
+            // this.clientToUserMap.delete(client.id);
+            await this.quizService.removeClient(client.id);
         }
     };
 }

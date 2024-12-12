@@ -5,15 +5,62 @@ import { Server } from 'socket.io';
 import { SocketEvent } from 'src/constants';
 import { QuizSubmit } from './quiz.interface';
 import { Quiz } from './quiz.schema';
+import { InjectRedis } from '@nestjs-modules/ioredis';
+import Redis from 'ioredis';
 
 @Injectable()
 export class QuizService {
     private server: Server;
 
-    constructor(@InjectModel(Quiz.name) private quizModel: Model<Quiz>) {}
+    private readonly clientKeyPrefix = 'client:'; // Key prefix for client-to-user mapping
+    private readonly quizKeyPrefix = 'quiz:'; // Key prefix for quiz participants
+
+    constructor(
+        @InjectModel(Quiz.name) private quizModel: Model<Quiz>,
+        @InjectRedis() private readonly redis: Redis,
+    ) {}
 
     setWebSocketServer(server: Server) {
         this.server = server;
+    }
+
+    async getClient(clientId) {
+        const userData = await this.redis.hgetall(
+            `${this.clientKeyPrefix}${clientId}`,
+        );
+        if (!userData || !userData.quizId || !userData.userId) {
+            return null;
+        }
+        return { quizId: userData.quizId, userId: userData.userId };
+    }
+
+    async addClient(clientId: string, quizId: string, userId: string) {
+        // Map client ID to user data
+        const clientKey = `${this.clientKeyPrefix}${clientId}`;
+        await this.redis.hmset(clientKey, { quizId, userId });
+
+        // Add user ID to the quiz participants set
+        const quizKey = `${this.quizKeyPrefix}${quizId}`;
+        await this.redis.sadd(quizKey, userId);
+    }
+
+    async removeClient(clientId: string) {
+        const clientKey = `${this.clientKeyPrefix}${clientId}`;
+
+        // Get client data before removing it
+        const userInfo = await this.redis.hgetall(clientKey);
+        if (!userInfo || !userInfo.quizId || !userInfo.userId) {
+            return null;
+        }
+
+        // Remove the client-to-user mapping
+        await this.redis.del(clientKey);
+
+        // Remove the user from the quiz participants set
+        const quizKey = `${this.quizKeyPrefix}${userInfo.quizId}`;
+        await this.redis.srem(quizKey, userInfo.userId);
+
+        return userInfo;
     }
 
     async addParticipant(quizId: string, userId: string) {

@@ -11,6 +11,13 @@ services:
       - 27018:27017
     networks:
       - mongo_network
+  redis:
+    image: redis:latest
+    container_name: quiz-redis
+    ports:
+      - '6379:6379' # Maps Redis port to localhost
+    networks:
+      - mongo_network
 
 volumes:
   mongodb_data:

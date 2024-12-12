@@ -13,7 +13,7 @@ export class SeederService {
         const existingQuiz = await this.quizModel.findOne({ quizId: 'abcdef' });
         if (!existingQuiz) {
             const quiz = new this.quizModel({
-                quizId: 'l0i',
+                quizId: 'loi',
                 questions: [
                     {
                         question: 'What is the capital of France?',

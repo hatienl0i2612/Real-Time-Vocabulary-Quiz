@@ -52,7 +52,14 @@ const Quiz: React.FC = () => {
                     <h1>Participants</h1>
                     <ul>
                         {quizStore.participants.map((participant) => (
-                            <li key={participant.id}>
+                            <li
+                                key={participant.id}
+                                className={
+                                    participant.userId === quizStore.userId
+                                        ? 'font-bold'
+                                        : ''
+                                }
+                            >
                                 UserID: {participant.userId}
                             </li>
                         ))}
